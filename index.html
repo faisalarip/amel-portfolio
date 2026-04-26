@@ -360,6 +360,61 @@
   .insight p { font-size: 14px; color: var(--ink-soft); margin-bottom: 16px; }
   .insight-meta { font-size: 12px; color: var(--ink-soft); }
 
+  /* INSIGHT MODAL */
+  .insight-modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(15, 27, 45, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    padding: 24px;
+  }
+  .insight-modal-overlay.active { opacity: 1; visibility: visible; }
+  .insight-modal {
+    background: var(--bg);
+    border-radius: 20px;
+    max-width: 720px; width: 100%;
+    max-height: 85vh; overflow-y: auto;
+    padding: 56px 48px;
+    position: relative;
+    transform: translateY(32px);
+    transition: transform 0.35s ease;
+    box-shadow: 0 32px 64px -16px rgba(15, 27, 45, 0.35);
+  }
+  .insight-modal-overlay.active .insight-modal { transform: translateY(0); }
+  .insight-modal-close {
+    position: absolute; top: 20px; right: 20px;
+    width: 40px; height: 40px; border: none;
+    background: var(--bg-alt); border-radius: 50%;
+    font-size: 20px; cursor: pointer; color: var(--ink-soft);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, color 0.2s;
+  }
+  .insight-modal-close:hover { background: var(--ink); color: var(--bg); }
+  .insight-modal-cat {
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent-deep); font-weight: 600; margin-bottom: 12px;
+  }
+  .insight-modal-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(28px, 4vw, 38px); font-weight: 600;
+    line-height: 1.2; margin-bottom: 12px; color: var(--ink);
+  }
+  .insight-modal-meta {
+    font-size: 13px; color: var(--ink-soft); margin-bottom: 32px;
+    padding-bottom: 24px; border-bottom: 1px solid var(--line);
+  }
+  .insight-modal-content p {
+    font-size: 16px; line-height: 1.75; color: var(--ink-2);
+    margin-bottom: 20px;
+  }
+  .insight-modal-content p strong { color: var(--ink); }
+  @media (max-width: 640px) {
+    .insight-modal { padding: 40px 24px; border-radius: 16px; }
+    .insight-modal-overlay { padding: 12px; }
+  }
+
   /* CONTACT */
   .contact {
     background: var(--ink);
@@ -751,7 +806,7 @@
              data-id="Pembahasan KPI tree, ritual pipeline, dan satu keputusan yang mengubah segalanya.">
             A breakdown of the KPI tree, the pipeline rituals, and the one decision that changed everything.
           </p>
-          <div class="insight-meta">5 min read · <span data-en="Coming soon" data-id="Segera hadir">Coming soon</span></div>
+          <div class="insight-meta">5 min read · <span data-en="Read →" data-id="Baca →">Read →</span></div>
         </div>
       </article>
 
@@ -767,7 +822,7 @@
              data-id="Pelajaran tentang ownership, hiring, dan percakapan tidak nyaman yang membentuk tim saya.">
             What I learned about ownership, hiring, and the uncomfortable conversations that shaped my team.
           </p>
-          <div class="insight-meta">7 min read · <span data-en="Coming soon" data-id="Segera hadir">Coming soon</span></div>
+          <div class="insight-meta">7 min read · <span data-en="Read →" data-id="Baca →">Read →</span></div>
         </div>
       </article>
 
@@ -783,13 +838,24 @@
              data-id="Logika di balik retention, dan kenapa saya berhenti mengejar vanity metric di meeting klien.">
             The math behind retention, and why I stopped chasing vanity metrics in client meetings.
           </p>
-          <div class="insight-meta">6 min read · <span data-en="Coming soon" data-id="Segera hadir">Coming soon</span></div>
+          <div class="insight-meta">6 min read · <span data-en="Read →" data-id="Baca →">Read →</span></div>
         </div>
       </article>
 
     </div>
   </div>
 </section>
+
+<!-- INSIGHT MODAL -->
+<div class="insight-modal-overlay" id="insightModal">
+  <div class="insight-modal">
+    <button class="insight-modal-close" id="insightModalClose" aria-label="Close">&times;</button>
+    <div class="insight-modal-cat" id="modalCat"></div>
+    <h2 class="insight-modal-title" id="modalTitle"></h2>
+    <div class="insight-modal-meta" id="modalMeta"></div>
+    <div class="insight-modal-content" id="modalContent"></div>
+  </div>
+</div>
 
 <!-- EDUCATION -->
 <section class="block" id="education" style="background: var(--bg-alt);">
@@ -867,6 +933,126 @@
   let savedLang = 'en';
   try { savedLang = localStorage.getItem('amel-lang') || 'en'; } catch(e) {}
   setLang(savedLang);
+
+  // ── Insight Modal ──
+  const insightArticles = {
+    1: {
+      cat: { en: 'Sales Strategy', id: 'Strategi Sales' },
+      title: {
+        en: 'The 3× Rule: How We Tripled New Client Acquisition in One Year',
+        id: 'Aturan 3×: Bagaimana Kami Mentriple Akuisisi Klien Baru dalam Setahun'
+      },
+      meta: { en: '5 min read', id: '5 menit baca' },
+      body: {
+        en: `<p>When I took over as Head of Sales & Marketing at Jasafotojakarta, we were averaging about 12 new clients per quarter. Good, but not great — and not enough to hit the aggressive revenue targets the company needed. I set one north-star goal: <strong>triple new client acquisition within 12 months</strong>. Here's the playbook that got us there.</p>
+<p>The first thing I did was build a <strong>KPI tree</strong>. Instead of just tracking "number of new clients," I broke it down into the leading indicators that actually drive that number: outbound touchpoints per week, proposal-to-meeting conversion rate, average deal cycle time, and close rate. Every team member could see exactly which lever they owned and how their daily activity connected to the top-line result.</p>
+<p>Next came what I call <strong>pipeline rituals</strong>. Every Monday we ran a 30-minute stand-up reviewing the pipeline stage by stage — no slides, just the CRM board on screen. Deals stuck in the same stage for more than two weeks got a "red flag" review: either we found a way to move them forward or we deliberately deprioritized them. This alone cut our average cycle time by 20% because we stopped pouring energy into deals that were never going to close.</p>
+<p>The one decision that changed everything was <strong>segmenting our outreach by client tier</strong>. We stopped treating every lead the same. Tier-1 prospects (enterprise brands with annual budgets above IDR 500M) got bespoke proposals with ROI projections tailored to their industry. Tier-2 got streamlined packages. Tier-3 prospects were routed to a self-serve deck. This meant the sales team spent 70% of their time on the accounts that mattered most — and our close rate on Tier-1 jumped from 22% to 38%.</p>
+<p>By month nine, we'd already passed the 3× mark. The final tally at year-end was <strong>3.2× growth in new client acquisitions</strong>, a 45% improvement in close rates, and a pipeline that generated 70% more annual revenue. The secret wasn't one tactic — it was building a system where <strong>every metric was visible, every ritual reinforced accountability, and every team member knew exactly what "winning" looked like</strong> on any given day.</p>`,
+        id: `<p>Ketika saya mengambil alih sebagai Head of Sales & Marketing di Jasafotojakarta, rata-rata kami mendapat sekitar 12 klien baru per kuartal. Lumayan, tapi belum cukup — dan tidak memadai untuk target revenue agresif yang dibutuhkan perusahaan. Saya menetapkan satu tujuan utama: <strong>triplekan akuisisi klien baru dalam 12 bulan</strong>. Berikut playbook yang membawa kami ke sana.</p>
+<p>Hal pertama yang saya lakukan adalah membangun <strong>KPI tree</strong>. Alih-alih hanya melacak "jumlah klien baru," saya memecahnya menjadi leading indicator yang benar-benar menggerakkan angka itu: touchpoint outbound per minggu, conversion rate proposal-ke-meeting, rata-rata deal cycle time, dan close rate. Setiap anggota tim bisa melihat persis lever mana yang mereka pegang dan bagaimana aktivitas harian mereka terhubung ke hasil top-line.</p>
+<p>Selanjutnya adalah apa yang saya sebut <strong>ritual pipeline</strong>. Setiap Senin kami menjalankan stand-up 30 menit mereview pipeline tahap per tahap — tanpa slide, hanya board CRM di layar. Deal yang stuck di tahap yang sama lebih dari dua minggu mendapat review "red flag": entah kami menemukan cara untuk memajukannya atau kami sengaja menurunkan prioritasnya. Ini saja memangkas average cycle time kami 20% karena kami berhenti menghabiskan energi untuk deal yang tidak akan pernah close.</p>
+<p>Satu keputusan yang mengubah segalanya adalah <strong>segmentasi outreach berdasarkan tier klien</strong>. Kami berhenti memperlakukan setiap lead sama rata. Prospek Tier-1 (brand enterprise dengan budget tahunan di atas IDR 500 juta) mendapat proposal khusus dengan proyeksi ROI yang disesuaikan industrinya. Tier-2 mendapat paket streamlined. Prospek Tier-3 diarahkan ke deck self-serve. Artinya tim sales menghabiskan 70% waktu mereka untuk akun yang paling penting — dan close rate kami di Tier-1 naik dari 22% ke 38%.</p>
+<p>Di bulan kesembilan, kami sudah melewati angka 3×. Hasil akhir di tahun itu adalah <strong>pertumbuhan 3,2× dalam akuisisi klien baru</strong>, peningkatan 45% dalam close rate, dan pipeline yang menghasilkan 70% lebih banyak revenue tahunan. Rahasianya bukan satu taktik — tapi membangun sistem di mana <strong>setiap metrik terlihat, setiap ritual memperkuat akuntabilitas, dan setiap anggota tim tahu persis seperti apa "menang"</strong> di hari apa pun.</p>`
+      }
+    },
+    2: {
+      cat: { en: 'Leadership', id: 'Kepemimpinan' },
+      title: {
+        en: 'From Specialist to Head: A Promotion Playbook',
+        id: 'Dari Specialist ke Head: Playbook Promosi'
+      },
+      meta: { en: '7 min read', id: '7 menit baca' },
+      body: {
+        en: `<p>I was promoted from Sales & Marketing Specialist to Head of Sales & Marketing at Jasafotojakarta in under three years. People sometimes ask if there was a single moment that earned the title. There wasn't. It was a series of small, deliberate shifts in how I showed up — and most of them were uncomfortable.</p>
+<p>The first shift was <strong>ownership mindset</strong>. As a specialist, my job was to close deals and hit my personal number. But I started treating the entire team's pipeline as my responsibility. When a colleague's deal stalled, I didn't wait for them to ask — I offered to co-pilot the next client call. When marketing campaigns underperformed, I pulled the data and brought recommendations to our manager unprompted. I wasn't trying to overstep; I was signaling that I cared about the outcome, not just my lane.</p>
+<p>The second shift was <strong>learning to hire — and learning I was bad at it</strong>. When I got the green light to build out the team, my first instinct was to hire people who thought like me. That was a mistake. The best hire I made was someone who constantly challenged my assumptions. She'd push back on timelines I thought were reasonable, question metrics I took for granted, and force me to articulate my reasoning out loud. That friction made every plan sharper.</p>
+<p>Third — and hardest — was getting comfortable with <strong>difficult conversations</strong>. Telling a teammate that their performance isn't where it needs to be is never easy, especially when you were peers six months ago. I learned to separate the person from the pattern: "I value you on this team, and here's a specific behavior that's holding you back." Direct, compassionate, documented. Two of those conversations led to the biggest performance turnarounds on the team.</p>
+<p>I also had to <strong>let go of being the top individual performer</strong>. As a specialist, I took pride in closing the biggest deals myself. As head, my job shifted to making five people better, not proving I was the best one. That meant spending mornings reviewing my team's proposals instead of writing my own. It meant celebrating their wins louder than mine. It meant measuring my success by the team's composite number, not my personal one.</p>
+<p>If I had to distill the playbook into one line, it would be this: <strong>a promotion isn't a reward for past performance — it's a bet on your ability to multiply others</strong>. The skills that make you a great individual contributor (execution speed, domain expertise, personal accountability) are table stakes. What gets you the next role is influence, systems thinking, and the willingness to have the conversations no one else wants to have.</p>`,
+        id: `<p>Saya dipromosikan dari Sales & Marketing Specialist menjadi Head of Sales & Marketing di Jasafotojakarta dalam waktu kurang dari tiga tahun. Orang kadang bertanya apakah ada satu momen tertentu yang membuat saya mendapat posisi itu. Tidak ada. Yang ada adalah serangkaian pergeseran kecil dan disengaja dalam cara saya tampil — dan sebagian besar tidak nyaman.</p>
+<p>Pergeseran pertama adalah <strong>ownership mindset</strong>. Sebagai specialist, tugas saya adalah closing deal dan mencapai angka personal. Tapi saya mulai memperlakukan seluruh pipeline tim sebagai tanggung jawab saya. Ketika deal rekan kerja macet, saya tidak menunggu mereka minta bantuan — saya menawarkan diri untuk co-pilot di call klien berikutnya. Ketika kampanye marketing underperform, saya tarik datanya dan bawa rekomendasi ke manager tanpa diminta. Saya bukan bermaksud melampaui batas; saya memberi sinyal bahwa saya peduli pada hasil, bukan hanya lane saya.</p>
+<p>Pergeseran kedua adalah <strong>belajar merekrut — dan menyadari saya buruk dalam hal itu</strong>. Ketika saya mendapat lampu hijau untuk membangun tim, insting pertama saya adalah merekrut orang yang berpikir seperti saya. Itu salah. Rekrutmen terbaik saya adalah seseorang yang terus menantang asumsi saya. Dia mendorong balik timeline yang saya pikir reasonable, mempertanyakan metrik yang saya anggap given, dan memaksa saya mengartikulasikan reasoning secara verbal. Friction itu membuat setiap rencana lebih tajam.</p>
+<p>Ketiga — dan paling sulit — adalah menjadi nyaman dengan <strong>percakapan yang tidak nyaman</strong>. Memberitahu rekan tim bahwa performa mereka belum sesuai standar itu tidak pernah mudah, apalagi ketika enam bulan lalu kalian masih peers. Saya belajar memisahkan orangnya dari polanya: "Saya menghargai kamu di tim ini, dan ini perilaku spesifik yang menghambatmu." Langsung, penuh empati, terdokumentasi. Dua dari percakapan itu menghasilkan turnaround performa terbesar di tim.</p>
+<p>Saya juga harus <strong>melepaskan status sebagai top individual performer</strong>. Sebagai specialist, saya bangga closing deal terbesar sendiri. Sebagai head, tugas saya bergeser menjadi membuat lima orang lebih baik, bukan membuktikan saya yang terbaik. Itu berarti menghabiskan pagi mereview proposal tim alih-alih menulis proposal sendiri. Itu berarti merayakan kemenangan mereka lebih keras dari kemenangan saya. Itu berarti mengukur keberhasilan saya dari angka komposit tim, bukan angka personal.</p>
+<p>Kalau saya harus merangkum playbook-nya dalam satu kalimat: <strong>promosi bukan hadiah untuk performa masa lalu — tapi taruhan pada kemampuanmu untuk melipatgandakan orang lain</strong>. Skill yang membuat kamu individual contributor hebat (kecepatan eksekusi, domain expertise, akuntabilitas personal) itu table stakes. Yang membawamu ke peran berikutnya adalah influence, systems thinking, dan keberanian untuk melakukan percakapan yang tidak mau dilakukan orang lain.</p>`
+      }
+    },
+    3: {
+      cat: { en: 'Client Strategy', id: 'Strategi Klien' },
+      title: {
+        en: 'Why 65% Repeat Business Matters More Than New Logos',
+        id: 'Kenapa 65% Repeat Business Lebih Penting dari Logo Baru'
+      },
+      meta: { en: '6 min read', id: '6 menit baca' },
+      body: {
+        en: `<p>In most sales organizations, the hero metric is new logos — new clients signed, new brands acquired, new names on the board. I get it. New logos feel like progress. But after years of managing a portfolio that consistently hit <strong>65% repeat business</strong>, I'm convinced the real competitive advantage lives in retention, not acquisition.</p>
+<p>Let's start with the <strong>math</strong>. Acquiring a new client in our industry costs roughly 5–7× more than retaining an existing one when you factor in the sales cycle (prospecting, proposals, negotiations, onboarding). A repeat client already trusts our process, knows our team, and has seen our deliverables. The average deal cycle for a returning client is 11 days. For a new one, it's 34. That means every repeat engagement frees up weeks of capacity that our team can reinvest into higher-quality outreach — or into delivering better work for the clients we already have.</p>
+<p>The second reason is <strong>deal size</strong>. Our data shows that repeat clients spend 40% more on their second engagement and 65% more on their third. Why? Because the first project is a trial. They're testing us with a smaller scope. When we deliver — on time, on budget, with clear communication — they expand the brief. One client that started with a single product shoot now runs all their quarterly campaigns through us, a 4× increase in annual spend.</p>
+<p>I also stopped chasing <strong>vanity metrics in client meetings</strong>. I used to walk into QBRs armed with engagement rates, follower growth, and impression counts. They look great in decks but they don't drive purchase decisions. Now I lead with the metrics the client's CFO actually cares about: cost per lead, conversion rate from campaign to pipeline, and revenue attributed to our work. When I started speaking the CFO's language, renewal conversations became formalities rather than negotiations.</p>
+<p>The operational side matters too. We built a simple <strong>client health scorecard</strong> — four signals tracked monthly: response time satisfaction, deliverable quality rating, NPS, and upsell readiness. Any client that dipped below threshold on two or more signals triggered a proactive check-in call, not from the account manager, but from me personally. That call has saved at least six accounts that were quietly considering alternatives.</p>
+<p>65% repeat business isn't a vanity metric — it's a <strong>compounding engine</strong>. Every retained client becomes a reference, a case study, and a source of warm introductions. Our best new logos last year? Four of the top five came from referrals by existing clients. Retention feeds acquisition. The brands that obsess over new logos at the expense of keeping current clients happy are running on a treadmill. The ones that master retention are building a flywheel.</p>`,
+        id: `<p>Di kebanyakan organisasi sales, metrik pahlawan adalah logo baru — klien baru ditandatangani, brand baru diakuisisi, nama baru di papan skor. Saya paham. Logo baru terasa seperti kemajuan. Tapi setelah bertahun-tahun mengelola portofolio yang konsisten mencapai <strong>65% repeat business</strong>, saya yakin keunggulan kompetitif sesungguhnya ada di retention, bukan akuisisi.</p>
+<p>Mari mulai dari <strong>matematikanya</strong>. Mengakuisisi klien baru di industri kami membutuhkan biaya sekitar 5–7× lebih besar dibanding mempertahankan yang sudah ada, ketika memperhitungkan sales cycle (prospecting, proposal, negosiasi, onboarding). Klien repeat sudah percaya proses kami, mengenal tim kami, dan sudah melihat deliverable kami. Rata-rata deal cycle untuk klien yang kembali adalah 11 hari. Untuk yang baru, 34 hari. Artinya setiap repeat engagement membebaskan berminggu-minggu kapasitas yang bisa diinvestasikan tim untuk outreach berkualitas lebih tinggi — atau untuk menghasilkan karya lebih baik bagi klien yang sudah ada.</p>
+<p>Alasan kedua adalah <strong>ukuran deal</strong>. Data kami menunjukkan klien repeat spending 40% lebih banyak di engagement kedua dan 65% lebih banyak di ketiga. Kenapa? Karena proyek pertama adalah percobaan. Mereka menguji kami dengan scope lebih kecil. Ketika kami deliver — tepat waktu, sesuai budget, dengan komunikasi yang jelas — mereka memperluas brief. Satu klien yang mulai dengan single product shoot sekarang menjalankan semua kampanye kuartalan mereka melalui kami, peningkatan 4× dalam spending tahunan.</p>
+<p>Saya juga berhenti mengejar <strong>vanity metrics di meeting klien</strong>. Dulu saya masuk ke QBR dengan senjata lengkap: engagement rate, follower growth, dan impression count. Terlihat bagus di deck tapi tidak menggerakkan purchase decision. Sekarang saya memimpin dengan metrik yang benar-benar dipedulikan CFO klien: cost per lead, conversion rate dari campaign ke pipeline, dan revenue yang diatribusikan ke pekerjaan kami. Ketika saya mulai berbicara bahasa CFO, percakapan renewal berubah dari negosiasi menjadi formalitas.</p>
+<p>Sisi operasional juga penting. Kami membangun <strong>client health scorecard</strong> sederhana — empat sinyal yang dilacak bulanan: kepuasan response time, rating kualitas deliverable, NPS, dan upsell readiness. Klien mana pun yang turun di bawah threshold di dua atau lebih sinyal memicu proactive check-in call, bukan dari account manager, tapi dari saya langsung. Call itu sudah menyelamatkan setidaknya enam akun yang diam-diam mempertimbangkan alternatif.</p>
+<p>65% repeat business bukan vanity metric — itu adalah <strong>mesin compounding</strong>. Setiap klien yang dipertahankan menjadi referensi, case study, dan sumber warm introduction. Logo baru terbaik kami tahun lalu? Empat dari lima teratas datang dari referral klien yang sudah ada. Retention memfeed akuisisi. Brand yang terobsesi pada logo baru dengan mengorbankan kepuasan klien saat ini sedang berlari di treadmill. Yang menguasai retention sedang membangun flywheel.</p>`
+      }
+    }
+  };
+
+  // Modal elements
+  const modalOverlay = document.getElementById('insightModal');
+  const modalCat = document.getElementById('modalCat');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalMeta = document.getElementById('modalMeta');
+  const modalContent = document.getElementById('modalContent');
+
+  function openInsightModal(index) {
+    const article = insightArticles[index];
+    if (!article) return;
+    const lang = document.documentElement.lang || 'en';
+    modalCat.textContent = article.cat[lang] || article.cat.en;
+    modalTitle.textContent = article.title[lang] || article.title.en;
+    modalMeta.textContent = article.meta[lang] || article.meta.en;
+    modalContent.innerHTML = article.body[lang] || article.body.en;
+    modalOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeInsightModal() {
+    modalOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  // Click listeners on insight cards
+  document.querySelectorAll('.insight').forEach((card, i) => {
+    card.addEventListener('click', () => openInsightModal(i + 1));
+  });
+
+  // Close handlers
+  document.getElementById('insightModalClose').addEventListener('click', closeInsightModal);
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) closeInsightModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalOverlay.classList.contains('active')) closeInsightModal();
+  });
+
+  // Update modal content on language switch
+  const origSetLang = setLang;
+  setLang = function(lang) {
+    origSetLang(lang);
+    // If modal is open, refresh its content
+    if (modalOverlay.classList.contains('active')) {
+      const openIndex = [1, 2, 3].find(idx => {
+        const a = insightArticles[idx];
+        return modalTitle.textContent === (a.title.en) || modalTitle.textContent === (a.title.id);
+      });
+      if (openIndex) openInsightModal(openIndex);
+    }
+  };
 </script>
 
 </body>
